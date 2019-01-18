@@ -1,0 +1,658 @@
+----------------------------------------------- INSTANCE / DERIVING -----------------------------------------------
+
+data Queue a = Queue [a] [a]
+    deriving (Show)
+
+Define equality for queues so that two queues are equal if and only if they have the same elements, in the same order, 
+independently of their representation. In order to do so, write that queues are an instance of the Eq class, where (==) is the equality operation you have to define:
+
+instance Eq a => Eq (Queue a)
+    where 
+        (Queue l1 l2) == (Queue r1 r2) = l1' == r1'
+            where
+                l1' = l1 ++ reverse l2
+                r1' = r1 ++ reverse r2
+
+Observe that, in order to have Queue a be an instance of Eq, it is necessary to have that the elements of type a are them-selves also instances of Eq.
+
+
+instance  (Eq a) => Eq (Tree a)  where
+    (Leaf x)     == (Leaf y)        =  x == y
+    (Branch l r) == (Branch l' r')  =  l == l' && r == r'
+    _            == _               =  False
+
+
+instance  (Ord a) => Ord (Tree a)  where
+    (Leaf _)     <= (Branch _)      =  True
+    (Leaf x)     <= (Leaf y)        =  x <= y
+    (Branch _)   <= (Leaf _)        =  False
+    (Branch l r) <= (Branch l' r')  =  l == l' && r <= r' || l <= l'
+
+
+data Foo = Foo {x :: Integer, str :: String}
+    deriving (Eq, Ord, Show, Read, Enum, Bounded)
+
+----------------------------------------------- CLASS -----------------------------------------------
+
+class  Eq a  where
+    (==), (/=) :: a -> a -> Bool
+
+        -- Minimal complete definition:
+        --      (==) or (/=)
+    x /= y     =  not (x == y)
+    x == y     =  not (x /= y)
+
+
+----------------------------------------------- DATA / TYPE -----------------------------------------------
+
+data Configuration = Configuration
+    String   -- User name
+    String   -- Local host
+    String   -- Remote host
+    Bool     -- Is guest?
+    Bool     -- Is superuser?
+    String   -- Current directory
+    String   -- Home directory
+    Integer  -- Time connected
+  deriving (Eq, Show)
+
+data Configuration = Configuration
+    { username      :: String
+    , localHost     :: String
+    , remoteHost    :: String
+    , isGuest       :: Bool
+    , isSuperuser   :: Bool
+    , currentDir    :: String
+    , homeDir       :: String
+    , timeConnected :: Integer
+    }
+
+username :: Configuration -> String
+localHost :: Configuration -> String
+
+
+
+type String = [Char]
+type AnniversaryBook = [Anniversary]
+
+
+----------------------------------------------- MONADS / DO / I/O -----------------------------------------------
+
+
+father :: Person -> Maybe Person
+mother :: Person -> Maybe Person
+
+bothGrandfathers :: Person -> Maybe (Person, Person)
+    bothGrandfathers p =
+        case father p of
+            Nothing -> Nothing
+            Just dad ->
+                case father dad of
+                    Nothing -> Nothing
+                    Just gf1 ->                          -- found first grandfather
+                        case mother p of
+                            Nothing -> Nothing
+                            Just mom ->
+                                case father mom of
+                                    Nothing -> Nothing
+                                    Just gf2 ->          -- found second grandfather
+                                        Just (gf1, gf2)
+
+ bothGrandfathers p =
+       father p >>=
+           (\dad -> father dad >>=
+               (\gf1 -> mother p >>=   -- gf1 is only used in the final return
+                   (\mom -> father mom >>=
+                       (\gf2 -> return (gf1,gf2) ))))
+
+bothGrandfathers p = do {
+        dad <- father p;
+        gf1 <- father dad;
+        mom <- mother p;
+        gf2 <- father mom;
+        return (gf1, gf2);
+      }
+
+
+
+putStr "Hello" >> 
+putStr " " >> 
+putStr "world!" >> 
+putStr "\n"
+
+do { putStr "Hello"
+   ; putStr " "
+   ; putStr "world!"
+   ; putStr "\n" }
+
+
+action1 >>= (\ x1 ->
+  action2 >>= (\ x2 ->
+    mk_action3 x1 x2 ))
+
+do {  x1 <- action1
+    ; x2 <- action2
+    ; mk_action3 x1 x2 }
+
+
+take m ys = case (m,ys) of
+                (0,_)       ->  []
+                (_,[])      ->  []
+                (n,x:xs)    ->  x : take (n-1) xs
+
+----------------------------------------------- UTILITIES -----------------------------------------------
+
+words "John 120 18.53" = ["John","120","18.53"], separa l'string usant l'espai ' ' com a separador
+
+read "123"::Float   = llegeix 123.0
+
+els do es poden anidar
+unless / when per condicionals amb valors monadics - dins d'un bloc do
+
+main = do {
+    line <- getLine;
+    unless (line == "*") $ do {
+        process line;
+        main;
+    }
+}
+
+
+Maybe a --> Just a | Nothing
+Either String Int --> Left("Hola") | Right(12)
+
+
+quickFib :: Int -> Int
+quickFib n = fst (quickFib' n)
+    where
+        quickFib' 0     = (0, 0)
+        quickFib' 1     = (1, 0)
+        quickFib' n     = (res + ant, res)
+            where
+                (res, ant) = quickFib' (n-1)
+
+----------------------------------------------- FUNCIONS -----------------------------------------------
+
+
+
+Funcions sobre llistes habituals en Haskell
+
+Aquesta lliçó recull les funcions sobre llistes més habituals en Haskell.
+head, last
+
+    Signatura:
+
+      head, last :: [a] -> a
+
+    Descripció:
+        head xs és el primer element de la llista xs.
+
+        last xs és el darrer element de la llista xs.
+
+        Error si xs és buida.
+
+    Exemples:
+
+      λ> head [1 .. 4]
+      👉 1
+      λ> last [1 .. 4]
+      👉 4
+
+tail, init
+
+    Signatura:
+
+      tail, init :: [a] -> [a]
+
+    Descripció:
+        tail xs és la llista xs sense el seu primer element.
+
+        init xs és la llista xs sense el seu darrer element.
+
+        Error si xs és buida.
+
+    Exemples:
+
+      λ> tail [1..4]
+      👉 [2, 3, 4]
+      λ> init [1..4]
+      👉 [1, 2, 3]
+
+reverse
+
+    Signatura:
+
+      reverse :: [a] -> [a]
+
+    Descripció:
+
+    reverse xs és la llista xs del revés.
+
+    Exemples:
+
+      λ> reverse [1..4]
+      👉 [4, 3, 2, 1]
+
+length
+
+    Signatura:
+
+      length :: [a] -> Int
+
+    Descripció:
+
+    length xs és el nombre d’elements a la llista xs.
+
+null
+
+    Signatura:
+
+      null :: [a] -> Bool
+
+    Descripció:
+
+    null xs indica si la llista xs és buida.
+
+elem
+
+    Signatura:
+
+      elem :: (Eq a) => a -> [a] -> Bool
+
+    Descripció:
+
+    elem x xs indica si x és a la llista xs.
+
+(!!)
+
+    Signatura:
+
+      (!!) :: [a] -> Int -> a
+
+    Descripció:
+
+    xs !! i és l’i-èsim element de la llista xs (començant per zero).
+
+maximum, minimum
+
+    Signatura:
+
+      maximum, minimum :: (Ord a) => [a] -> a
+
+    Descripció:
+        maximum xs és l’element més gran de la llista (no buida!) xs.
+        minimum xs és l’element més petit de la llista (no buida!) xs.
+
+and, or
+
+    Signatura:
+
+      and, or :: [Bool] -> Bool
+
+    Descripció:
+        and bs és la conjunció de la llista de booleans bs.
+        or bs és la disjunció de la llista de booleans bs.
+
+sum, product
+
+    Signatura:
+
+      sum, product :: [Int] -> Int
+
+    Descripció:
+        sum xs és la suma de la llista d’enters xs.
+        prod xs és el producte de la llista d’enters xs.
+
+    Exemples:
+
+      fact n = prod [1 .. n]
+
+      λ> fact 5
+      👉 120
+
+take, drop
+
+    Signatura:
+
+      take, drop :: Int -> [a] -> [a]
+
+    Descripció:
+        take n xs és el prefixe de llargada n de la llista `xs.
+        drop n xs és el sufixe de la llista xs quan se li treuen els n primers elements.
+
+    Exemples:
+
+      λ> take 3 [1 .. 7]
+      👉 [1, 2, 3]
+      λ> drop 3 [1 .. 7]
+      👉 [4, 5, 6, 7]
+
+zip
+
+    Signatura:
+
+      zip :: [a] -> [b] -> [(a, b)]
+
+    Descripció:
+
+    zip xs ys és la llista que combina, en ordre, cada parell d’elements de xs i ys. Si en falten, es perden.
+
+    Exemples:
+
+      λ> zip [1, 2, 3] ['a', 'b', 'c']
+      👉 [(1, 'a'), (2, 'b'), (3, 'c')]
+      λ> zip [1 .. 10] [1 .. 3]
+      👉 [(1, 1), (2, 2), (3, 3)]
+
+repeat
+
+    Signatura:
+
+      repeat :: a -> [a]
+
+    Descripció:
+
+    repeat x és la llista infinita on tots els elements són x.
+
+    Exemples:
+
+      λ> repeat 3
+      👉 [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, ...]
+      λ> take 4 (repeat 3)
+      👉 [3, 3, 3, 3]
+
+concat
+
+    Signatura:
+
+      concat :: [[a]] -> [a]
+
+    Descripció:
+
+    concat xs és la llista qie concatena totes les llistes de xs.
+
+    Exemples:
+
+      λ> concat [[1, 2, 3], [], [3], [1, 2]]
+      👉 [1, 2, 3, 3, 1, 2]
+
+
+
+
+
+Funcions d’ordre superior habituals en Haskell
+
+Aquesta lliçó recull les funcions d’ordre superior més habituals en Haskell.
+flip
+
+    Signatura:
+
+      flip :: (a -> b -> c) -> (b -> a -> c)
+
+    Descripció:
+
+    flip f retorna la funció f però amb els seus dos paràmetres invertits. Es defineix per
+
+      flip f x y = f y x
+
+    Exemples:
+
+      λ> meitat = flip div 2
+
+      λ> meitat 10
+      👉 5
+
+composició (.)
+
+    Signatura:
+
+      (.) :: (b -> c) -> (a -> b) -> a -> c
+
+    Descripció:
+
+    f . g és la composició de les funcions f i g.
+
+    Exemples:
+
+      λ> majors3 = take 3 . reverse . sort
+
+      λ> majors3 [3, 1, 2, 6, 7]
+      👉 [7, 6, 3]
+
+aplicació ($)
+
+    Signatura:
+
+      ($) :: (a -> b) -> a -> b
+
+    Descripció:
+
+    f $ x és el mateix que f x. Sembla inútil, però degut a la baixa prioritat d’aquest operador, ens permet ometre molts parèntesis de tancar!
+
+    Exemples:
+
+      λ> tail (tail (tail (tail "Jordi")))
+      👉 "i"
+      λ> tail $ tail $ tail $ tail "Jordi"
+      👉 "i"
+
+map
+
+    Signatura:
+
+      map :: (a -> b) -> [a] -> [b]
+
+    Descripció:
+
+    map f xs és la llista que s’obté al aplicar la funció f a cada element de la llista xs, de forma que map f [x1, x2, ..., xn] és [f x1, f x2, ..., f xn].
+
+    Exemples:
+
+      λ> map even [2, 4, 6, 7]
+      👉 [True, True, True, False]
+
+      λ> map (*2) [2, 4, 6, 7]
+      👉 [4, 8, 12, 14]
+
+filter
+
+    Signatura:
+
+      filter :: (a -> Bool) -> [a] -> [a]
+
+    Descripció:
+
+    filter p xs és la subllista dels elements de xsque compleixen el predicat p.
+
+    Exemples:
+
+      λ> filter even [2, 1, 4, 6, 7]
+      👉 [2, 4, 6]
+
+zipWith
+
+    Signatura:
+
+      zipWith :: (a -> b -> c) -> [a] -> [b] -> [c]
+
+    Descripció:
+
+    zipWith op xs ys és la llista obtinguda operant cada element de xs amb cada element de ys via la funció op, d’esquerra a dreta, mentre n’hi hagi.
+
+    Exemples:
+
+      λ> zipWith (+) [1, 2, 3] [5, 1, 8, 9]
+      👉 [6, 3, 11]
+
+all
+
+    Signatura:
+
+      all :: (a -> Bool) -> [a] -> Bool
+
+    Descripció:
+
+    all p xs indica si tots els elements de xs compleixen el predicat p.
+
+    Exemples:
+
+      λ> all even [2, 1, 4, 6, 7]
+      👉 False
+      λ> all even [2, 4, 6]
+      👉 True
+
+any
+
+    Signatura:
+
+      any :: (a -> Bool) -> [a] -> Bool
+
+    Descripció:
+
+    all p xs indica si algun dels elements de xs compleix el predicat p.
+
+    Exemples:
+
+      λ> any even [2, 1, 4, 6, 7]
+      👉 True
+      λ> all odd [2, 4, 6]
+      👉 False
+
+dropWhile
+
+    Signatura:
+
+      dropWhile :: (a -> Bool) -> [a] -> [a]
+
+    Descripció:
+
+    dropWhile p xs és la subllista de xs que elimina els primers elements de xs que compleixen el predicat p (fins al final o al primer qua no la compleix).
+
+    Exemples:
+
+      λ> dropWhile even [2, 4, 6, 7, 8]
+      👉 [7, 8]
+      λ> dropWhile even [2, 4]
+      👉 []
+
+takeWhile
+
+    Signatura:
+
+      takeWhile :: (a -> Bool) -> [a] -> [a]
+
+    Descripció:
+
+    takeWhile p xs és la subllista de xs que conté els primers elements de xs que compleixen el predicat p (fins al final o al primer que no la compleix).
+
+    Exemples:
+
+      λ> takeWhile even [2, 4, 6, 7, 8]
+      👉 [2, 4, 6]
+      λ> takeWhile even [1, 3]
+      👉 []
+
+iterate
+
+    Signatura:
+
+      iterate :: (a -> a) -> a -> [a]
+
+    Descripció:
+
+    iterate f x retorna la llista infinita [x, f x, f (f x), f (f (f x)), ...].
+
+    Exemples:
+
+      λ> iterate (*2) 1
+      👉 [1, 2, 4, 8, 16, ...]
+
+foldl
+
+    Signatura:
+
+      foldl :: (b -> a -> b) -> b -> [a] -> b
+
+    Descripció:
+
+    foldl ⊕ x0 xs desplega un operador ⊕ per l’esquerra, de forma que foldl ⊕ x0 [x1, x2, ..., xn] és (((x0 ⊕ x1) ⊕ x2) ⊕ ...) ⊕ xn.
+
+    Exemples:
+
+      λ> foldl (+) 0 [3, 2, (-1)]
+      👉 4
+
+foldr
+
+    Signatura:
+
+      foldr :: (a -> b -> b) -> b -> [a] -> b
+
+    Descripció:
+
+    foldr ⊕ x0 xs desplega un operador per la dreta, de forma que foldr ⊕ x0 [x1, x2, ..., xn] és x1 ⊕ (x2 ... ⊕ (xn ⊕ x0))).
+
+    Exemples:
+
+      λ> foldr (+) 0 [3, 2, (-1)]
+      👉 4
+
+scanl
+
+    Signatura:
+
+      scanl :: (b -> a -> b) -> b -> [a] -> [b]
+
+    Descripció:
+
+    scanl f z xs és com foldl f z xs però enlloc de retornar el valor final, retorna la llista amb tots els resultats intermigs.
+
+    Exemples:
+
+      λ> scanl (+) 0 [3, 2, (-1)]
+      👉 [0, 3, 5, 4]
+
+scanr
+
+    Signatura:
+
+      scanr :: (a -> b -> b) -> b -> [a] -> [b]
+
+    Descripció:
+
+    scanr f z xs és com foldr f z xs però enlloc de retornar el valor final, retorna la llista amb tots els resultats intermigs.
+
+    Exemples:
+
+      λ> scanr (+) 0 [3, 2, (-1)]
+      👉 [4, 1, -1, 0]
+
+const
+
+    Signatura:
+
+      const :: a -> b -> a
+
+    Descripció:
+
+    const x és una funció que sempre retorna x, independentment de què se li apliqui.
+
+    Exemples:
+
+      λ> map (const 42) [1 .. 5]
+      👉 [42, 42, 42, 42, 42]
+
+id
+
+    Signatura:
+
+      id :: a -> a
+
+    Descripció:
+
+    id és la funció identitat. També sembla inútil, pero va bé en algun moment.
+
+    Exemples:
+
+      λ> map id [1 .. 5]
+      👉 [1, 2, 3, 4, 5]
