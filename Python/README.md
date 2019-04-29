@@ -1,4 +1,4 @@
-### Modificació posterior de l'enunciat (merdes típiques de la FIB)
+### Modificació posterior de l'enunciat
 
 Degut a que las coordenades de localització que apareixen en l'arxiu XML de la pràctica no poden ser fàcilment usades, considereu la següent modificació de l'enunciat:
 
